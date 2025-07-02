@@ -1,0 +1,25 @@
+System.Windows.Markup.XamlParseException: 'Provide value on 'System.Windows.StaticResourceExtension' threw an exception.' Line number '98' and line position '33'.
+ ---> System.Xaml.XamlParseException: Exception of type 'System.Xaml.XamlParseException' was thrown.
+   at System.Windows.Baml2006.Baml2006Reader.ReadObject(KeyRecord record)
+   at System.Windows.ResourceDictionary.CreateObject(KeyRecord key)
+   at System.Windows.ResourceDictionary.OnGettingValue(Object key, Object& value, Boolean& canCache)
+   at System.Windows.ResourceDictionary.OnGettingValuePrivate(Object key, Object& value, Boolean& canCache)
+   at System.Windows.ResourceDictionary.GetValueWithoutLock(Object key, Boolean& canCache)
+   at System.Windows.ResourceDictionary.GetValue(Object key, Boolean& canCache)
+   at System.Windows.ResourceDictionary.FetchResource(Object resourceKey, Boolean allowDeferredResourceReference, Boolean mustReturnDeferredResourceReference, Boolean canCacheAsThemeResource, Boolean& canCache)
+   at System.Windows.FrameworkElement.FindResourceInternal(FrameworkElement fe, FrameworkContentElement fce, DependencyProperty dp, Object resourceKey, Object unlinkedParent, Boolean allowDeferredResourceReference, Boolean mustReturnDeferredResourceReference, DependencyObject boundaryElement, Boolean isImplicitStyleLookup, Object& source)
+   at System.Windows.StaticResourceExtension.FindResourceInAppOrSystem(IServiceProvider serviceProvider, Boolean allowDeferredReference, Boolean mustReturnDeferredResourceReference)
+   at System.Windows.StaticResourceExtension.FindResourceInEnviroment(IServiceProvider serviceProvider, Boolean allowDeferredReference, Boolean mustReturnDeferredResourceReference)
+   at System.Windows.StaticResourceExtension.TryProvideValueImpl(IServiceProvider serviceProvider, Boolean allowDeferredReference, Boolean mustReturnDeferredResourceReference)
+   at System.Windows.StaticResourceExtension.TryProvideValueInternal(IServiceProvider serviceProvider, Boolean allowDeferredReference, Boolean mustReturnDeferredResourceReference)
+   at System.Windows.StaticResourceExtension.ProvideValueInternal(IServiceProvider serviceProvider, Boolean allowDeferredReference)
+   at System.Windows.StaticResourceExtension.ProvideValue(IServiceProvider serviceProvider)
+   at MS.Internal.Xaml.Runtime.ClrObjectRuntime.CallProvideValue(MarkupExtension me, IServiceProvider serviceProvider)
+   --- End of inner exception stack trace ---
+   at System.Windows.Markup.XamlReader.RewrapException(Exception e, IXamlLineInfo lineInfo, Uri baseUri)
+   at System.Windows.Markup.WpfXamlLoader.Load(XamlReader xamlReader, IXamlObjectWriterFactory writerFactory, Boolean skipJournaledProperties, Object rootObject, XamlObjectWriterSettings settings, Uri baseUri)
+   at System.Windows.Markup.WpfXamlLoader.LoadBaml(XamlReader xamlReader, Boolean skipJournaledProperties, Object rootObject, XamlAccessLevel accessLevel, Uri baseUri)
+   at System.Windows.Markup.XamlReader.LoadBaml(Stream stream, ParserContext parserContext, Object parent, Boolean closeStream)
+   at System.Windows.Application.LoadComponent(Object component, Uri resourceLocator)
+   at UEVR.MainWindow.InitializeComponent() in C:\Users\ellio\OneDrive\Documents\GitHub\uevr-frontend\UEVR\MainWindow.xaml:line 1
+   at UEVR.MainWindow..ctor() in C:\Users\ellio\OneDrive\Documents\GitHub\uevr-frontend\UEVR\MainWindow.xaml.cs:line 186

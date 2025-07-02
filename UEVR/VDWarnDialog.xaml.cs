@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using SourceChord.FluentWPF;
 
 namespace UEVR {
-    public partial class VDWarnDialog : Window {
+    public partial class VDWarnDialog : AcrylicWindow {
         public bool HideFutureWarnings { get; private set; }
         public bool DialogResultOK { get; private set; }
 

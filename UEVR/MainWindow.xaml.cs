@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SourceChord.FluentWPF;
 
 using System.Diagnostics;
 using System.Security.Policy;
@@ -152,7 +153,7 @@ namespace UEVR {
         }
     }
 
-    public partial class MainWindow : Window {
+    public partial class MainWindow : AcrylicWindow {
         // variables
         // process list
         private List<Process> m_processList = new List<Process>();

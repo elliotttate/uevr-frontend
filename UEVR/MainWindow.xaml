@@ -1,200 +1,390 @@
-﻿<Window x:Class="UEVR.MainWindow"
+﻿<fw:AcrylicWindow x:Class="UEVR.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UEVR"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
-        TextOptions.TextFormattingMode="Ideal"
-        TextOptions.TextRenderingMode="Auto"
-        Background="#FF1A1B1C"
-        FontFamily="{DynamicResource MaterialDesignFont}"
+        xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
         mc:Ignorable="d"
-        Title="UEVR"
-        Closing="MainWindow_Closing" Loaded="MainWindow_Loaded"
-        SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="/UEVR2.png"
+        Title="UEVR - Universal Unreal Engine VR Mod"
+        Closing="MainWindow_Closing" 
+        Loaded="MainWindow_Loaded"
+        Width="900"
+        Height="1000"
+        ResizeMode="CanResize" 
+        Icon="/UEVR2.png"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        >
-    <StackPanel x:Name="m_vertStackPanel" Orientation="Vertical">
+        AcrylicWindowStyle="None"
+        TintColor="#1E1E1E"
+        TintOpacity="0.9"
+        NoiseOpacity="0.02"
+        FallbackColor="#1E1E1E">
+    
+    <Border Background="{StaticResource FluentBackgroundBrush}" 
+            CornerRadius="12" 
+            Margin="8">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Opacity="0.15" ShadowDepth="8" BlurRadius="24"/>
+        </Border.Effect>
+        
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <Border MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="#FF1A1B1C">
-            <Border.Style>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="Cursor" Value="Hand"/>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Cursor" Value="SizeAll"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <DockPanel Height="30">
-                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                       VerticalAlignment="Center"
-                       Margin="25,0,0,0"
-                       FontWeight="Bold"
-                       Foreground="White" />
-                <Button DockPanel.Dock="Right"
-                    Click="CloseButton_Click"
-                    Width="30"
-                    Height="30"
-                    Background="Transparent"
-                    BorderBrush="Transparent"
-                    HorizontalAlignment="Right"
-                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                >
-                    <materialDesign:PackIcon Kind="Close" HorizontalAlignment="Center" Height="30" Width="30" />
-                </Button>
-            </DockPanel>
-        </Border>
-        <StackPanel x:Name="m_sideStackPanel" Orientation="Horizontal">
-            <DockPanel>
-                <Menu DockPanel.Dock="Top" HorizontalAlignment="Center">
-                    <Menu.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel Orientation="Vertical"/>
-                        </ItemsPanelTemplate>
-                    </Menu.ItemsPanel>
-                    <MenuItem>
-                        <MenuItem.Header>
-                            <StackPanel Width="75">
-                                <materialDesign:PackIcon Kind="QuestionMark" HorizontalAlignment="Center" Height="30" Width="30">
-                                </materialDesign:PackIcon>
-                            </StackPanel>
-                        </MenuItem.Header>
-                        <TextBlock TextWrapping="Wrap" Text="Author: praydog"/>
-
-                        <MenuItem Header="_Documentation" Click="Documentation_Clicked">
-                        </MenuItem>
-
-                        <MenuItem Header="_Donate" Click="Donate_Clicked">
-                        </MenuItem>
-                    </MenuItem>
-                    <MenuItem x:Name="m_openGlobalDirectoryBtn" Click="OpenGlobalDir_Clicked">
-                        <MenuItem.Header>
-                            <StackPanel Width="75">
-                                <materialDesign:PackIcon Kind="Folder" HorizontalAlignment="Center" Height="30" Width="30">
-                                </materialDesign:PackIcon>
-                                <TextBlock Text="Open Global Dir" HorizontalAlignment="Center" FontSize="10"/>
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Visibility="Collapsed" x:Name="m_openGameDirectoryBtn" Click="OpenGameDir_Clicked">
-                        <MenuItem.Header>
-                            <StackPanel Width="75">
-                                <materialDesign:PackIcon Kind="Folder" HorizontalAlignment="Center" Height="30" Width="30">
-                                </materialDesign:PackIcon>
-                                <TextBlock Text="Open Game Dir" HorizontalAlignment="Center" FontSize="10"/>
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Visibility="Visible" x:Name="m_exportConfigBtn" Click="ExportConfig_Clicked">
-                        <MenuItem.Header>
-                            <StackPanel Width="75">
-                                <materialDesign:PackIcon Kind="Export"  HorizontalAlignment="Center" Height="30" Width="30" RenderTransformOrigin="0.5,0.5">
-                                    <materialDesign:PackIcon.RenderTransform>
-                                        <TransformGroup>
-                                            <ScaleTransform/>
-                                            <SkewTransform/>
-                                            <RotateTransform Angle="180"/>
-                                            <TranslateTransform/>
-                                        </TransformGroup>
-                                    </materialDesign:PackIcon.RenderTransform>
-                                </materialDesign:PackIcon>
-                                <TextBlock Text="Export Config" HorizontalAlignment="Center" FontSize="10"/>
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                    <MenuItem Visibility="Visible" x:Name="m_importConfigBtn" Click="ImportConfig_Clicked">
-                        <MenuItem.Header>
-                            <StackPanel Width="75">
-                                <materialDesign:PackIcon Kind="Import"  HorizontalAlignment="Center" Height="30" Width="30" RenderTransformOrigin="0.5,0.5">
-                                </materialDesign:PackIcon>
-                                <TextBlock Text="Import Config" HorizontalAlignment="Center" FontSize="10"/>
-                            </StackPanel>
-                        </MenuItem.Header>
-                    </MenuItem>
-                </Menu>
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                    <TextBlock TextWrapping="Wrap" Text="Author: praydog"/>
-                </StackPanel>
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                    <Button Margin="5" Click="GitHub_Clicked" Background="Transparent" BorderThickness="0,0,0,0" RenderOptions.BitmapScalingMode="HighQuality" Height="40">
-                        <Image Source="github.png" HorizontalAlignment="Center" Height="30" Width="30" />
-                    </Button>
-                    <Button Margin="5" Click="Donate_Clicked" Background="Transparent" BorderThickness="0,0,0,0" RenderOptions.BitmapScalingMode="HighQuality">
-                        <Image Source="donate.png" HorizontalAlignment="Center" Height="30" Width="30" />
-                    </Button>
-                    <Button Margin="5" Click="Discord_Clicked" Background="Transparent" BorderThickness="0,0,0,0" RenderOptions.BitmapScalingMode="HighQuality">
-                        <Image Source="discord.png" HorizontalAlignment="Center" Height="30" Width="30" />
-                    </Button>
-                </StackPanel>
-            </DockPanel>
-            <StackPanel x:Name="m_topStackPanel" Orientation="Vertical">
-                <GroupBox x:Name="m_nNotificationsGroupBox" Header="Notifications" ClipToBounds="True" Visibility="Collapsed">
-                    <StackPanel>
-                        <TextBlock x:Name="m_adminExplanation" TextWrapping="Wrap" Text="Some executables may not show up or fail to inject unless started as Administrator." Visibility="Collapsed"/>
-                        <Button x:Name="m_restartAsAdminButton" Content="Restart as Administrator" Click="RestartAsAdminButton_Click" Visibility="Collapsed"/>
+            <!-- Modern Title Bar -->
+            <Border Grid.Row="0" 
+                    Background="{StaticResource FluentSurfaceBrush}" 
+                    CornerRadius="12,12,0,0"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Height="48">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                        <Image Source="/UEVR2.png" Width="24" Height="24" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding Title, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                                   VerticalAlignment="Center"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource FluentTextBrush}"/>
                     </StackPanel>
-                </GroupBox>
-                <StackPanel Orientation="Horizontal">
-                    <GroupBox Header="Inject" ClipToBounds="True">
-                        <StackPanel ClipToBounds="True" HorizontalAlignment="Left">
-                            <ComboBox x:Name="m_processListBox" DropDownOpened="ComboBox_DropDownOpened" SelectionChanged="ComboBox_SelectionChanged" VerticalAlignment="Top" MinWidth="500"/>
-                            <Button x:Name="m_injectButton" Content="Inject" Click="Inject_Clicked"/>
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="m_openvrRadio" Content="OpenVR"/>
-                                <RadioButton x:Name="m_openxrRadio" Content="OpenXR"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <ToggleButton x:Name="m_nullifyVRPluginsCheckbox" HorizontalAlignment="Left"/>
-                                    <TextBlock TextWrapping="Wrap" Text="Nullify VR Plugins"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <ToggleButton x:Name="m_focusGameOnInjectionCheckbox" HorizontalAlignment="Left" IsChecked="True"/>
-                                    <TextBlock TextWrapping="Wrap" Text="Focus game on injection"/>
-                                </StackPanel>
+                    
+                    <Button Grid.Column="1"
+                            Click="CloseButton_Click"
+                            Width="46"
+                            Height="32"
+                            Margin="0,0,8,0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Style="{StaticResource FluentButton}">
+                        <Path Fill="Transparent" 
+                              Data="M 8,8 L 24,24 M 24,8 L 8,24" 
+                              Stroke="{StaticResource FluentTextBrush}" 
+                              StrokeThickness="2"
+                              Width="16"
+                              Height="16"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1" Margin="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Sidebar -->
+                <Border Grid.Column="0" 
+                        Background="{StaticResource FluentSurfaceBrush}"
+                        CornerRadius="8"
+                        Padding="16"
+                        Margin="0,0,16,0"
+                        MinWidth="120">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" Opacity="0.08" ShadowDepth="2" BlurRadius="8"/>
+                    </Border.Effect>
+                    
+                    <StackPanel>
+                        <!-- Quick Actions -->
+                        <TextBlock Text="Quick Actions" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="14"
+                                   Foreground="{StaticResource FluentTextBrush}"
+                                   Margin="0,0,0,12"/>
+                        
+                        <Button x:Name="m_openGlobalDirectoryBtn" 
+                                Click="OpenGlobalDir_Clicked"
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel>
+                                <Path Fill="{StaticResource FluentTextBrush}" 
+                                      Data="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"
+                                      Width="20" Height="20" 
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"/>
+                                <TextBlock Text="Global Directory" 
+                                           FontSize="11" 
+                                           HorizontalAlignment="Center" 
+                                           Margin="0,4,0,0"/>
                             </StackPanel>
-                            <TextBlock x:Name="m_connectionStatus" TextWrapping="Wrap" Text="Unknown status"/>
+                        </Button>
+                        
+                        <Button x:Name="m_openGameDirectoryBtn" 
+                                Click="OpenGameDir_Clicked"
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Stretch"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <Path Fill="{StaticResource FluentTextBrush}" 
+                                      Data="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"
+                                      Width="20" Height="20" 
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"/>
+                                <TextBlock Text="Game Directory" 
+                                           FontSize="11" 
+                                           HorizontalAlignment="Center" 
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="m_exportConfigBtn" 
+                                Click="ExportConfig_Clicked"
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel>
+                                <Path Fill="{StaticResource FluentTextBrush}" 
+                                      Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
+                                      Width="20" Height="20" 
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"/>
+                                <TextBlock Text="Export Config" 
+                                           FontSize="11" 
+                                           HorizontalAlignment="Center" 
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button x:Name="m_importConfigBtn" 
+                                Click="ImportConfig_Clicked"
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,16"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel>
+                                <Path Fill="{StaticResource FluentTextBrush}" 
+                                      Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
+                                      Width="20" Height="20" 
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"/>
+                                <TextBlock Text="Import Config" 
+                                           FontSize="11" 
+                                           HorizontalAlignment="Center" 
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Links -->
+                        <TextBlock Text="Links" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="14"
+                                   Foreground="{StaticResource FluentTextBrush}"
+                                   Margin="0,8,0,12"/>
+                        
+                        <Button Click="GitHub_Clicked" 
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="github.png" Width="16" Height="16"/>
+                                <TextBlock Text="GitHub" FontSize="12" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Click="Donate_Clicked" 
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="donate.png" Width="16" Height="16"/>
+                                <TextBlock Text="Donate" FontSize="12" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Click="Discord_Clicked" 
+                                Style="{StaticResource FluentButton}"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="discord.png" Width="16" Height="16"/>
+                                <TextBlock Text="Discord" FontSize="12" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Click="Documentation_Clicked" 
+                                Style="{StaticResource FluentButton}"
+                                HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Fill="{StaticResource FluentTextBrush}" 
+                                      Data="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2M12,17C11.45,17 11,16.55 11,16C11,15.45 11.45,15 12,15C12.55,15 13,15.45 13,16C13,16.55 12.55,17 12,17M12,13C11.45,13 11,12.55 11,12V8C11,7.45 11.45,7 12,7C12.55,7 13,7.45 13,8V12C13,12.55 12.55,13 12,13Z"
+                                      Width="16" Height="16" 
+                                      Stretch="Uniform"/>
+                                <TextBlock Text="Help" FontSize="12" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <TextBlock Text="Author: praydog" 
+                                   FontSize="11" 
+                                   Foreground="{StaticResource FluentTextSecondaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,16,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Main Content Area -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <!-- Notifications -->
+                    <GroupBox x:Name="m_nNotificationsGroupBox" 
+                              Grid.Row="0"
+                              Header="Notifications" 
+                              Style="{StaticResource FluentGroupBox}"
+                              Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock x:Name="m_adminExplanation" 
+                                       TextWrapping="Wrap" 
+                                       Text="Some executables may not show up or fail to inject unless started as Administrator." 
+                                       Visibility="Collapsed"
+                                       Foreground="{StaticResource FluentTextBrush}"/>
+                            <Button x:Name="m_restartAsAdminButton" 
+                                    Content="Restart as Administrator" 
+                                    Click="RestartAsAdminButton_Click" 
+                                    Style="{StaticResource FluentAccentButton}"
+                                    Visibility="Collapsed"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,8,0,0"/>
                         </StackPanel>
                     </GroupBox>
-                </StackPanel>
-                <GroupBox Header="Game Settings" ClipToBounds="True">
-                    <ListView x:Name="m_iniListView" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" MaxHeight="640">
-                        <ListView.Resources>
-                            <DataTemplate x:Key="ComboBoxTemplate">
-                                <ComboBox ToolTip="{Binding Tooltip}" ItemsSource="{Binding ComboValues}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding Value}" SelectionChanged="ComboChanged_Value"/>
-                            </DataTemplate>
-                            <DataTemplate x:Key="TextBoxTemplate">
-                                <TextBox ToolTip="{Binding Tooltip}" Text="{Binding Value, Mode=TwoWay}" Width="150" TextChanged="TextChanged_Value"/>
-                            </DataTemplate>
-                            <DataTemplate x:Key="CheckBoxTemplate">
-                                <CheckBox ToolTip="{Binding Tooltip}" IsChecked="{Binding ValueAsBool,Mode=TwoWay}" Width="150" Checked="CheckChanged_Value" Unchecked="CheckChanged_Value"/>
-                            </DataTemplate>
 
-                            <DataTemplate x:Key="KeyTemplate">
-                                <TextBlock ToolTip="{Binding Tooltip}" Text="{Binding Key}"/>
-                            </DataTemplate>
+                    <!-- Injection -->
+                    <GroupBox Grid.Row="1" Header="Inject VR Mod" Style="{StaticResource FluentGroupBox}">
+                        <StackPanel>
+                            <ComboBox x:Name="m_processListBox" 
+                                      DropDownOpened="ComboBox_DropDownOpened" 
+                                      SelectionChanged="ComboBox_SelectionChanged" 
+                                      Style="{StaticResource FluentComboBox}"
+                                      MinWidth="500"
+                                      Margin="0,0,0,16"/>
+                            
+                            <Button x:Name="m_injectButton" 
+                                    Content="Inject UEVR" 
+                                    Click="Inject_Clicked"
+                                    Style="{StaticResource FluentAccentButton}"
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Padding="24,12"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,0,16"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="VR Runtime" 
+                                               FontWeight="SemiBold" 
+                                               Margin="0,0,0,8"
+                                               Foreground="{StaticResource FluentTextBrush}"/>
+                                    <RadioButton x:Name="m_openvrRadio" 
+                                                 Content="OpenVR (SteamVR)"
+                                                 Style="{StaticResource FluentRadioButton}"
+                                                 Margin="0,0,0,4"/>
+                                    <RadioButton x:Name="m_openxrRadio" 
+                                                 Content="OpenXR (Universal)"
+                                                 Style="{StaticResource FluentRadioButton}"
+                                                 Margin="0,0,0,8"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="Options" 
+                                               FontWeight="SemiBold" 
+                                               Margin="0,0,0,8"
+                                               Foreground="{StaticResource FluentTextBrush}"/>
+                                    <CheckBox x:Name="m_nullifyVRPluginsCheckbox" 
+                                              Content="Nullify VR Plugins"
+                                              Style="{StaticResource FluentCheckBox}"
+                                              Margin="0,0,0,4"/>
+                                    <CheckBox x:Name="m_focusGameOnInjectionCheckbox" 
+                                              Content="Focus game on injection"
+                                              IsChecked="True"
+                                              Style="{StaticResource FluentCheckBox}"
+                                              Margin="0,0,0,8"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <Border Background="{StaticResource FluentCardBrush}"
+                                    CornerRadius="4"
+                                    Padding="12"
+                                    Margin="0,8,0,0">
+                                <TextBlock x:Name="m_connectionStatus" 
+                                           Text="Ready to inject"
+                                           FontSize="12"
+                                           Foreground="{StaticResource FluentTextSecondaryBrush}"/>
+                            </Border>
+                        </StackPanel>
+                    </GroupBox>
 
-                            <local:ValueTemplateSelector x:Key="valueTemplateSelector"
-                                     ComboBoxTemplate="{StaticResource ComboBoxTemplate}"
-                                     TextBoxTemplate="{StaticResource TextBoxTemplate}"
-                                     CheckboxTemplate="{StaticResource CheckBoxTemplate}"/>
+                    <!-- Game Settings -->
+                    <GroupBox Grid.Row="2" Header="Game Settings" Style="{StaticResource FluentGroupBox}">
+                        <ListView x:Name="m_iniListView" 
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  Style="{StaticResource FluentListView}">
+                            <ListView.Resources>
+                                <DataTemplate x:Key="ComboBoxTemplate">
+                                    <ComboBox ToolTip="{Binding Tooltip}" 
+                                              ItemsSource="{Binding ComboValues}" 
+                                              SelectedValuePath="Key" 
+                                              DisplayMemberPath="Value" 
+                                              SelectedValue="{Binding Value}" 
+                                              SelectionChanged="ComboChanged_Value"
+                                              Style="{StaticResource FluentComboBox}"/>
+                                </DataTemplate>
+                                <DataTemplate x:Key="TextBoxTemplate">
+                                    <TextBox ToolTip="{Binding Tooltip}" 
+                                             Text="{Binding Value, Mode=TwoWay}" 
+                                             Width="150" 
+                                             TextChanged="TextChanged_Value"
+                                             Style="{StaticResource FluentTextBox}"/>
+                                </DataTemplate>
+                                <DataTemplate x:Key="CheckBoxTemplate">
+                                    <CheckBox ToolTip="{Binding Tooltip}" 
+                                              IsChecked="{Binding ValueAsBool,Mode=TwoWay}" 
+                                              Width="150" 
+                                              Checked="CheckChanged_Value" 
+                                              Unchecked="CheckChanged_Value"
+                                              Style="{StaticResource FluentCheckBox}"/>
+                                </DataTemplate>
+                                <DataTemplate x:Key="KeyTemplate">
+                                    <TextBlock ToolTip="{Binding Tooltip}" 
+                                               Text="{Binding Key}"
+                                               Foreground="{StaticResource FluentTextBrush}"/>
+                                </DataTemplate>
 
-                        </ListView.Resources>
+                                <local:ValueTemplateSelector x:Key="valueTemplateSelector"
+                                         ComboBoxTemplate="{StaticResource ComboBoxTemplate}"
+                                         TextBoxTemplate="{StaticResource TextBoxTemplate}"
+                                         CheckboxTemplate="{StaticResource CheckBoxTemplate}"/>
+                            </ListView.Resources>
 
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="Key" Width="200" CellTemplate="{StaticResource KeyTemplate}"/>
-                                <GridViewColumn Header="Value" Width="150" CellTemplateSelector="{StaticResource valueTemplateSelector}"/>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                </GroupBox>
-            </StackPanel>
-        </StackPanel>
-    </StackPanel>
-</Window>
+                            <ListView.View>
+                                <GridView>
+                                    <GridView.ColumnHeaderContainerStyle>
+                                        <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource FluentGridViewColumnHeader}"/>
+                                    </GridView.ColumnHeaderContainerStyle>
+                                    <GridViewColumn Header="Setting" Width="250" CellTemplate="{StaticResource KeyTemplate}"/>
+                                    <GridViewColumn Header="Value" Width="200" CellTemplateSelector="{StaticResource valueTemplateSelector}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </GroupBox>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</fw:AcrylicWindow>

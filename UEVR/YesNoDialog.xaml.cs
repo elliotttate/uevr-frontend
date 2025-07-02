@@ -5,9 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using SourceChord.FluentWPF;
 
 namespace UEVR {
-    public partial class YesNoDialog : Window {
+    public partial class YesNoDialog : AcrylicWindow {
         public bool DialogResultYes { get; private set; } = false;
 
         public YesNoDialog(string windowTitle, string txt) {

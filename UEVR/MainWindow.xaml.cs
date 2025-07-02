@@ -172,7 +172,8 @@ namespace UEVR {
         private IConfiguration? m_currentConfig = null;
         private string? m_currentConfigPath = null;
 
-        private ExecutableFilter m_executableFilter = new ExecutableFilter();
+        // ExecutableFilter is no longer needed - we now use positive Unreal Engine detection
+        // private ExecutableFilter m_executableFilter = new ExecutableFilter();
         private string? m_commandLineAttachExe = null;
         private bool m_ignoreFutureVDWarnings = false;
 
@@ -1120,10 +1121,13 @@ namespace UEVR {
                     return false;
                 }
 
-                if (!m_executableFilter.IsValidExecutable(process.ProcessName.ToLower())) {
+                // Use Unreal Engine detection instead of blacklist filtering
+                if (!UnrealDetector.IsUnrealProcess(process)) {
                     return false;
                 }
 
+                // Ensure the process uses D3D11 or D3D12 (required for VR injection)
+                bool hasDirectX = false;
                 foreach (ProcessModule module in process.Modules) {
                     if (module.ModuleName == null) {
                         continue;
@@ -1131,11 +1135,16 @@ namespace UEVR {
 
                     string moduleLow = module.ModuleName.ToLower();
                     if (moduleLow == "d3d11.dll" || moduleLow == "d3d12.dll") {
-                        return true ;
+                        hasDirectX = true;
+                        break;
                     }
                 }
 
-                // Check if the excluded processes file exists
+                if (!hasDirectX) {
+                    return false;
+                }
+
+                // Check if the excluded processes file exists (keep as additional override)
                 if (File.Exists(excludedProcessesFile)) {
                     
                     List<string> excludedProcesses = new List<string>();
@@ -1150,7 +1159,7 @@ namespace UEVR {
                     
                 }
 
-                return false;
+                return true;
             } catch(Exception ex) {
                 Console.WriteLine(ex.ToString());
                 return false;

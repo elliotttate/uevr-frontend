@@ -313,6 +313,10 @@
                                               Content="Focus game on injection"
                                               IsChecked="True"
                                               Style="{StaticResource FluentCheckBox}"
+                                              Margin="0,0,0,4"/>
+                                    <CheckBox x:Name="m_autoInjectCheckbox" 
+                                              Content="Auto-inject after 20s"
+                                              Style="{StaticResource FluentCheckBox}"
                                               Margin="0,0,0,8"/>
                                 </StackPanel>
                             </Grid>

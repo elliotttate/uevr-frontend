@@ -42,5 +42,21 @@ namespace UEVR {
             get { return (bool)this["FocusGameOnInjection"]; }
             set { this["FocusGameOnInjection"] = value; }
         }
+
+        [UserScopedSettingAttribute()]
+        [DefaultSettingValueAttribute("false")]
+        public bool AutoInjectAfterDetection
+        {
+            get { return (bool)this["AutoInjectAfterDetection"]; }
+            set { this["AutoInjectAfterDetection"] = value; }
+        }
+
+        [UserScopedSettingAttribute()]
+        [DefaultSettingValueAttribute("20")]
+        public int AutoInjectDelaySeconds
+        {
+            get { return (int)this["AutoInjectDelaySeconds"]; }
+            set { this["AutoInjectDelaySeconds"] = value; }
+        }
     }
 }

@@ -177,13 +177,37 @@ namespace UEVR {
         private string? m_commandLineAttachExe = null;
         private bool m_ignoreFutureVDWarnings = false;
 
+        // Auto-scan functionality
+        private DateTime m_lastAutoScanTime = DateTime.MinValue;
+        private bool m_autoScanEnabled = true;
+        private readonly TimeSpan m_autoScanInterval = TimeSpan.FromSeconds(10);
+
+        // Auto-inject functionality
+        private DateTime m_gameDetectedTime = DateTime.MinValue;
+        private bool m_autoInjectEnabled = false;
+        private TimeSpan m_autoInjectDelay = TimeSpan.FromSeconds(20);
+        private bool m_autoInjectTriggered = false;
+
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
         private string excludedProcessesFile = "excluded.txt";
 
+        private void LogDebug(string message) {
+            try {
+                string logPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "UEVR_Debug.log");
+                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
+                File.AppendAllText(logPath, logEntry + Environment.NewLine);
+            } catch {
+                // Ignore logging errors
+            }
+        }
+
         public MainWindow() {
             InitializeComponent();
+            
+            // Log application startup
+            LogDebug("UEVR Application started");
 
             // Grab the command-line arguments
             string[] args = Environment.GetCommandLineArgs();
@@ -214,6 +238,14 @@ namespace UEVR {
             m_nullifyVRPluginsCheckbox.IsChecked = m_mainWindowSettings.NullifyVRPluginsCheckbox;
             m_ignoreFutureVDWarnings = m_mainWindowSettings.IgnoreFutureVDWarnings;
             m_focusGameOnInjectionCheckbox.IsChecked = m_mainWindowSettings.FocusGameOnInjection;
+            m_autoInjectCheckbox.IsChecked = m_mainWindowSettings.AutoInjectAfterDetection;
+            
+            // Load custom auto-inject delay
+            m_autoInjectDelay = TimeSpan.FromSeconds(m_mainWindowSettings.AutoInjectDelaySeconds);
+            
+            // Add click handler to the checkbox text for configuring delay
+            m_autoInjectCheckbox.PreviewMouseLeftButtonDown += AutoInjectCheckbox_PreviewMouseLeftButtonDown;
+            m_autoInjectEnabled = m_mainWindowSettings.AutoInjectAfterDetection;
 
             m_updateTimer.Tick += (sender, e) => Dispatcher.Invoke(MainWindow_Update);
             m_updateTimer.Start();
@@ -597,6 +629,330 @@ namespace UEVR {
                 m_virtualDesktopChecked = true;
                 Check_VirtualDesktop();
             }
+
+            // Auto-scan for Unreal Engine games when no game is selected
+            Update_AutoScan();
+
+            // Auto-inject after detection delay
+            Update_AutoInject();
+        }
+
+        private void Update_AutoScan() {
+            DateTime now = DateTime.Now;
+
+            // Check if currently selected game is still running
+            if (m_lastSelectedProcessId != 0 && !string.IsNullOrEmpty(m_lastSelectedProcessName)) {
+                bool gameStillRunning = false;
+                try {
+                    var currentProcess = Process.GetProcessById(m_lastSelectedProcessId);
+                    if (currentProcess != null && !currentProcess.HasExited && currentProcess.ProcessName == m_lastSelectedProcessName) {
+                        gameStillRunning = true;
+                    }
+                } catch (ArgumentException) {
+                    // Process not found
+                    gameStillRunning = false;
+                }
+
+                if (!gameStillRunning) {
+                    // Game is no longer running - clear selection and re-enable auto-scan
+                    LogDebug($"Game process {m_lastSelectedProcessName} (PID: {m_lastSelectedProcessId}) is no longer running. Clearing selection and re-enabling auto-scan.");
+                    
+                    m_lastSelectedProcessName = "";
+                    m_lastSelectedProcessId = 0;
+                    m_gameDetectedTime = DateTime.MinValue;
+                    m_autoInjectTriggered = false;
+                    m_autoScanEnabled = true;
+                    
+                    // Reset the auto-scan timer to start scanning immediately
+                    m_lastAutoScanTime = DateTime.MinValue;
+                    
+                    // Clear the default process name to avoid interference with auto-selection
+                    m_lastDefaultProcessListName = null;
+                    
+                    // Clear the dropdown selection
+                    if (m_processListBox != null) {
+                        m_processListBox.SelectedIndex = -1;
+                    }
+                    
+                    // Refresh the process list to show current state
+                    FillProcessList();
+                    
+                    // Start scanning immediately for new games
+                    LogDebug("Starting immediate auto-scan after game quit.");
+                    AutoScanForUnrealGames();
+                }
+            }
+
+            if (!m_autoScanEnabled) {
+                return;
+            }
+
+            // Check if we should auto-scan (every 10 seconds)
+            if (now - m_lastAutoScanTime < m_autoScanInterval) {
+                return;
+            }
+
+            // Only auto-scan if no game is currently selected
+            if (m_lastSelectedProcessId == 0 || string.IsNullOrEmpty(m_lastSelectedProcessName)) {
+                m_lastAutoScanTime = now;
+                LogDebug("Auto-scan: Starting scheduled scan for Unreal Engine games.");
+                AutoScanForUnrealGames();
+            }
+        }
+
+        private void Update_AutoInject() {
+            // Update auto-inject enabled status from checkbox
+            m_autoInjectEnabled = m_autoInjectCheckbox?.IsChecked == true;
+
+            // Update checkbox text with countdown
+            UpdateAutoInjectCheckboxText();
+
+            // Debug logging - log every few seconds to track state
+            if (m_lastSelectedProcessId != 0) {
+                DateTime now = DateTime.Now;
+                if (m_gameDetectedTime != DateTime.MinValue) {
+                    TimeSpan elapsed = now - m_gameDetectedTime;
+                    // Log every 5 seconds to avoid spam
+                    if ((int)elapsed.TotalSeconds % 5 == 0 && elapsed.TotalMilliseconds % 1000 < 500) {
+                        LogDebug($"Auto-inject debug: Enabled={m_autoInjectEnabled}, Triggered={m_autoInjectTriggered}, Connected={m_connected}, Elapsed={elapsed.TotalSeconds:F1}s, GameTime={m_gameDetectedTime}");
+                    }
+                } else {
+                    LogDebug($"Auto-inject debug: Game selected but no detection time set. PID={m_lastSelectedProcessId}, Name={m_lastSelectedProcessName}");
+                }
+            }
+
+            if (!m_autoInjectEnabled || m_autoInjectTriggered || m_connected) {
+                return;
+            }
+
+            // Check if we have a game selected and enough time has passed
+            if (m_lastSelectedProcessId != 0 && !string.IsNullOrEmpty(m_lastSelectedProcessName) && 
+                m_gameDetectedTime != DateTime.MinValue) {
+                
+                DateTime now = DateTime.Now;
+                if (now - m_gameDetectedTime >= m_autoInjectDelay) {
+                    LogDebug("Auto-inject: Time threshold reached, checking process...");
+                    
+                    // Verify the game is still running
+                    try {
+                        var currentProcess = Process.GetProcessById(m_lastSelectedProcessId);
+                        if (currentProcess != null && !currentProcess.HasExited && 
+                            currentProcess.ProcessName == m_lastSelectedProcessName) {
+                            
+                            LogDebug("Auto-inject: Process verified, triggering injection...");
+                            // Trigger auto-injection
+                            m_autoInjectTriggered = true;
+                            TriggerAutoInject();
+                        } else {
+                            LogDebug("Auto-inject: Process not running or has exited");
+                        }
+                    } catch (ArgumentException) {
+                        LogDebug("Auto-inject: Process not found, resetting state");
+                        // Process not found - reset auto-inject state
+                        m_gameDetectedTime = DateTime.MinValue;
+                        m_autoInjectTriggered = false;
+                    }
+                }
+            }
+        }
+
+        private void UpdateAutoInjectCheckboxText() {
+            if (m_autoInjectCheckbox == null) return;
+
+            int delaySeconds = (int)m_autoInjectDelay.TotalSeconds;
+            string baseText = $"Auto-inject after {delaySeconds}s";
+            
+            // If auto-inject is enabled and we have a game detected, show countdown
+            if (m_autoInjectEnabled && m_gameDetectedTime != DateTime.MinValue && 
+                m_lastSelectedProcessId != 0 && !m_autoInjectTriggered && !m_connected) {
+                
+                DateTime now = DateTime.Now;
+                TimeSpan elapsed = now - m_gameDetectedTime;
+                double remainingSeconds = m_autoInjectDelay.TotalSeconds - elapsed.TotalSeconds;
+                
+                if (remainingSeconds > 0) {
+                    baseText = $"Auto-inject in {Math.Ceiling(remainingSeconds):F0}s";
+                } else {
+                    baseText = "Auto-injecting...";
+                }
+            }
+            
+            m_autoInjectCheckbox.Content = baseText;
+        }
+
+        private void AutoInjectCheckbox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+            // Check if the click is on the text content area (not the checkbox square)
+            var checkbox = sender as CheckBox;
+            if (checkbox != null) {
+                var position = e.GetPosition(checkbox);
+                
+                // If click is beyond the checkbox square (roughly 20 pixels from left), show dialog
+                if (position.X > 25) {
+                    ShowAutoInjectDelayDialog();
+                    e.Handled = true; // Prevent the checkbox from toggling
+                }
+            }
+        }
+
+        private void ShowAutoInjectDelayDialog() {
+            string currentDelay = ((int)m_autoInjectDelay.TotalSeconds).ToString();
+            
+            // Create a simple input dialog using WPF
+            var dialog = new Window() {
+                Title = "Configure Auto-Inject Delay",
+                Width = 350,
+                Height = 180,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                ResizeMode = ResizeMode.NoResize
+            };
+
+            var stackPanel = new StackPanel() { Margin = new Thickness(20) };
+            
+            var label = new Label() { 
+                Content = "Enter auto-inject delay in seconds (1-300):",
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            
+            var textBox = new TextBox() { 
+                Text = currentDelay,
+                Margin = new Thickness(0, 0, 0, 15),
+                Padding = new Thickness(5)
+            };
+            
+            var buttonPanel = new StackPanel() { 
+                Orientation = Orientation.Horizontal, 
+                HorizontalAlignment = HorizontalAlignment.Right 
+            };
+            
+            var okButton = new Button() { 
+                Content = "OK", 
+                Width = 75, 
+                Margin = new Thickness(0, 0, 10, 0),
+                Padding = new Thickness(5)
+            };
+            
+            var cancelButton = new Button() { 
+                Content = "Cancel", 
+                Width = 75,
+                Padding = new Thickness(5)
+            };
+
+            bool dialogResult = false;
+            okButton.Click += (s, e) => { dialogResult = true; dialog.Close(); };
+            cancelButton.Click += (s, e) => { dialog.Close(); };
+            
+            textBox.KeyDown += (s, e) => {
+                if (e.Key == Key.Enter) { dialogResult = true; dialog.Close(); }
+                if (e.Key == Key.Escape) { dialog.Close(); }
+            };
+
+            buttonPanel.Children.Add(okButton);
+            buttonPanel.Children.Add(cancelButton);
+            
+            stackPanel.Children.Add(label);
+            stackPanel.Children.Add(textBox);
+            stackPanel.Children.Add(buttonPanel);
+            
+            dialog.Content = stackPanel;
+            textBox.Focus();
+            textBox.SelectAll();
+            
+            dialog.ShowDialog();
+
+            if (dialogResult && int.TryParse(textBox.Text, out int newDelay)) {
+                if (newDelay >= 1 && newDelay <= 300) { // Limit between 1 and 300 seconds
+                    m_autoInjectDelay = TimeSpan.FromSeconds(newDelay);
+                    m_mainWindowSettings.AutoInjectDelaySeconds = newDelay;
+                    m_mainWindowSettings.Save();
+                    
+                    LogDebug($"Auto-inject delay changed to {newDelay} seconds");
+                    UpdateAutoInjectCheckboxText(); // Update the display immediately
+                } else {
+                    MessageBox.Show("Please enter a value between 1 and 300 seconds.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
+        private void TriggerAutoInject() {
+            try {
+                // Simulate clicking the inject button
+                Inject_Clicked(this, new RoutedEventArgs());
+            } catch (Exception ex) {
+                LogDebug($"Auto-inject error: {ex}");
+            }
+        }
+
+        private async void AutoScanForUnrealGames() {
+            try {
+                // Run the scan in a background task to avoid blocking the UI
+                await Task.Run(() => {
+                    Process[] processes = Process.GetProcesses();
+                    Process? foundGame = null;
+
+                    // Look for the first injectable Unreal Engine game
+                    foreach (Process process in processes) {
+                        if (IsInjectableProcess(process)) {
+                            foundGame = process;
+                            break;
+                        }
+                    }
+
+                    if (foundGame != null) {
+                        // Update the UI on the main thread
+                        Application.Current.Dispatcher.Invoke(() => {
+                            // Set the selected process
+                            m_lastSelectedProcessId = foundGame.Id;
+                            m_lastSelectedProcessName = foundGame.ProcessName;
+
+                            // Disable auto-scan since we found a game
+                            m_autoScanEnabled = false;
+
+                            // Set the game detection time for auto-inject
+                            m_gameDetectedTime = DateTime.Now;
+                            m_autoInjectTriggered = false;
+                            LogDebug($"Auto-scan: Game detected - {foundGame.ProcessName} (PID: {foundGame.Id}) at {m_gameDetectedTime}");
+                            LogDebug($"Auto-inject: Will trigger in 20 seconds if enabled (currently: {m_autoInjectEnabled})");
+
+                            // Refresh the process list to show the found game
+                            FillProcessList();
+                            
+                            // IMPORTANT: After filling the process list, we need to select the found game in the dropdown
+                            // Use a small delay to ensure FillProcessList has completed
+                            Application.Current.Dispatcher.BeginInvoke(new Action(() => {
+                                string targetProcessName = GenerateProcessName(foundGame);
+                                LogDebug($"Auto-scan: Looking for process in dropdown: {targetProcessName}");
+                                LogDebug($"Auto-scan: Dropdown has {m_processListBox.Items.Count} items");
+                                
+                                bool found = false;
+                                for (int i = 0; i < m_processListBox.Items.Count; i++) {
+                                    string itemText = m_processListBox.Items[i].ToString() ?? "";
+                                    LogDebug($"Auto-scan: Checking item {i}: {itemText}");
+                                    if (itemText == targetProcessName) {
+                                        m_processListBox.SelectedIndex = i;
+                                        LogDebug($"Auto-scan: Selected game in dropdown at index {i}: {targetProcessName}");
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!found) {
+                                    LogDebug($"Auto-scan: WARNING - Could not find target process in dropdown: {targetProcessName}");
+                                }
+                            }), System.Windows.Threading.DispatcherPriority.Background);
+
+                            // Clear the UnrealDetector cache periodically to prevent memory buildup
+                            if (UnrealDetector.GetCacheSize() > 100) {
+                                UnrealDetector.ClearCache();
+                            }
+                        });
+                    } else {
+                        LogDebug("Auto-scan: No Unreal Engine games found in current scan.");
+                    }
+                });
+            } catch (Exception ex) {
+                LogDebug($"Auto-scan error: {ex}");
+            }
         }
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
@@ -605,6 +961,8 @@ namespace UEVR {
             m_mainWindowSettings.NullifyVRPluginsCheckbox = m_nullifyVRPluginsCheckbox.IsChecked == true;
             m_mainWindowSettings.IgnoreFutureVDWarnings = m_ignoreFutureVDWarnings;
             m_mainWindowSettings.FocusGameOnInjection = m_focusGameOnInjectionCheckbox.IsChecked == true;
+            m_mainWindowSettings.AutoInjectAfterDetection = m_autoInjectCheckbox.IsChecked == true;
+            m_mainWindowSettings.AutoInjectDelaySeconds = (int)m_autoInjectDelay.TotalSeconds;
 
             m_mainWindowSettings.Save();
         }
@@ -892,17 +1250,44 @@ namespace UEVR {
 
             try {
                 var box = (sender as ComboBox);
-                if (box == null || box.SelectedIndex < 0 || box.SelectedIndex > m_processList.Count) {
+                if (box == null) {
+                    return;
+                }
+
+                // Handle deselection case (when SelectedIndex is -1 or out of bounds)
+                if (box.SelectedIndex < 0 || box.SelectedIndex >= m_processList.Count) {
+                    // Game was deselected - re-enable auto-scanning and reset auto-inject
+                    m_lastSelectedProcessName = "";
+                    m_lastSelectedProcessId = 0;
+                    m_autoScanEnabled = true;
+                    m_gameDetectedTime = DateTime.MinValue;
+                    m_autoInjectTriggered = false;
                     return;
                 }
 
                 var p = m_processList[box.SelectedIndex];
                 if (p == null || p.HasExited) {
+                    // Invalid process - re-enable auto-scanning and reset auto-inject
+                    m_lastSelectedProcessName = "";
+                    m_lastSelectedProcessId = 0;
+                    m_autoScanEnabled = true;
+                    m_gameDetectedTime = DateTime.MinValue;
+                    m_autoInjectTriggered = false;
                     return;
                 }
 
                 m_lastSelectedProcessName = p.ProcessName;
                 m_lastSelectedProcessId = p.Id;
+
+                // Disable auto-scanning when a game is manually selected
+                m_autoScanEnabled = false;
+                
+                // Set game detection time for manually selected games too (allow auto-inject on manual selection)
+                if (m_gameDetectedTime == DateTime.MinValue) {
+                    m_gameDetectedTime = DateTime.Now;
+                    m_autoInjectTriggered = false;
+                    LogDebug($"Manual selection: Game selected - {p.ProcessName} (PID: {p.Id}) at {m_gameDetectedTime}");
+                }
 
                 // Search for the VR plugins inside the game directory
                 // and warn the user if they exist.
@@ -953,6 +1338,9 @@ namespace UEVR {
         private void ComboBox_DropDownOpened(object sender, System.EventArgs e) {
             m_lastSelectedProcessName = "";
             m_lastSelectedProcessId = 0;
+
+            // Re-enable auto-scanning when user manually opens dropdown
+            m_autoScanEnabled = true;
 
             FillProcessList();
             Update_InjectStatus();
